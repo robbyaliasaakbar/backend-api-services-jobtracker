@@ -1,0 +1,45 @@
+# infra/docker-compose.stack.yml — stack JobTracker v2 (PRD §5 skeleton)
+# Postgres TIDAK di sini: reuse container `postgres` yang sudah hidup di :5432.
+# Caddy pakai network host biar Caddyfile (127.0.0.1:7012/7002) berlaku persis.
+
+services:
+  backend-api:
+    build:
+      context: ..
+      target: runner
+    restart: always
+    expose:
+      - "7012"
+    ports:
+      - "7012:7012"
+    env_file:
+      - ../.env
+    environment:
+      # Di container, Postgres dan Auth lama (:7002) ada di host (luar stack ini).
+      DB_HOST: host.docker.internal
+      AUTH_URL: http://host.docker.internal:7002
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:7012/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    logging:
+      driver: json-file
+
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    network_mode: host
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      backend-api:
+        condition: service_healthy
