@@ -28,7 +28,7 @@ Duplicate the template file into `.env`:
 ```bash
 cp .env.example .env
 ```
-Fill in your Postgres user/password (Cara A), or drop in a full `DATABASE_URL` (Cara B, which wins). The auth URL and allowed CORS origins already point at the right places — leave them alone unless you moved something.
+Fill in your Postgres user/password using the split `DB_*` variables, or drop in a full `DATABASE_URL` instead — the URL wins over the split ones. The auth URL and allowed CORS origins already point at the right places — leave them alone unless you moved something.
 
 ### 2. Set up the tools
 If you're running directly on your machine:
