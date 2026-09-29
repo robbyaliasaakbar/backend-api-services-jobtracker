@@ -1,6 +1,34 @@
-# infra/Caddyfile — 1 pintu :7014 (PRD §4)
-# Catatan: strip_prefix /auth karena auth PHP frozen butuh path persis /api/*.
+# infra/Caddyfile — 1 pintu :7014 (PRD §4) — REDESIGN 27 Sep 2026 (lihat PRD/RENCANA-funnel-redesign.md)
+# Backup versi lama: PRD/backup-Caddyfile-20260927.txt
+#
+# KELENJARAN BARU (funnel 8443 mount → sini):
+#   /jobtracker/api/*   → strip /jobtracker        → 7012 (jobtracker API)
+#   /jobtracker/auth/*  → strip /jobtracker/auth   → 7002 (auth PHP frozen: butuh path persis /api/*)
+#   /jobtracker/health  → respond ok
+#   /contentos/*        → strip /contentos         → 7010 (contentOS API)
+# Route LAMA dipertahankan buat akses langsung :7014 / rollback aman.
+
 :7014 {
+  # --- BARU: prefix jobtracker ---
+  handle /jobtracker/api/* {
+    uri strip_prefix /jobtracker
+    reverse_proxy 127.0.0.1:7012
+  }
+  handle /jobtracker/auth/* {
+    uri strip_prefix /jobtracker/auth
+    reverse_proxy 127.0.0.1:7002
+  }
+  handle /jobtracker/health {
+    respond "ok" 200
+  }
+
+  # --- BARU: prefix contentOS ---
+  handle /contentos/* {
+    uri strip_prefix /contentos
+    reverse_proxy 127.0.0.1:7010
+  }
+
+  # --- LAMA (dipertahankan) ---
   handle /api/* {
     reverse_proxy 127.0.0.1:7012
   }
